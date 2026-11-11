@@ -25,35 +25,19 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Setup Android SDK and Build Tools
-        run: |
-          echo "y" | sudo ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
-
-      - name: Find and extract project
+      - name: Extract project and build
         run: |
           ZIP_FILE=$(find . -maxdepth 1 -iname '*.zip' | head -n 1)
-          if [ -z "$ZIP_FILE" ]; then
-            echo "ZIP file not found"
-            exit 1
-          fi
           unzip -q "$ZIP_FILE" -d source
-          PROJECT_DIR=$(find source -name package.json -printf '%h\n' | head -n 1)
-          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
-
-      - name: Build app
-        working-directory: ${{ env.PROJECT_DIR }}
-        run: |
+          cd source/*/
           npm install
           npm run build
-          if [ ! -d "android" ]; then
-            npx cap add android
-          fi
+          npx cap add android || true
           npx cap sync android
 
       - name: Build APK
-        working-directory: ${{ env.PROJECT_DIR }}/android
         run: |
+          cd source/*/android
           chmod +x gradlew
           ./gradlew assembleDebug
 
@@ -61,5 +45,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Hudalchiig-Ol-APK
-          path: ${{ env.PROJECT_DIR }}/android/app/build/outputs/apk/debug/app-debug.apk
+          path: source/*/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
