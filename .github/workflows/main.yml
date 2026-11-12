@@ -15,31 +15,10 @@ jobs:
         with:
           node-version: '20'
       - uses: android-actions/setup-android@v3
-      - name: Extract zip
-        run: |
-          ZIP_FILE=$(find . -maxdepth 1 -iname '*.zip' | head -n 1)
-          unzip -q "$ZIP_FILE" -d source
-      - name: Build web app
-        run: |
-          cd source/*
-          npm install
-          npm run build
-      - name: Add Capacitor Android & Sync
-        run: |
-          cd source/*
-          if [ ! -d "android" ]; then
-            npx cap add android
-          fi
-          npx cap sync android
-      - name: Build APK with Gradle
-        run: |
-          cd source/*/android
-          chmod +x gradlew
-          ./gradlew assembleDebug
-      - name: Prepare artifact
-        run: |
-          mkdir -p out
-          cp source/*/android/app/build/outputs/apk/debug/app-debug.apk out/app-debug.apk
+      - name: Build Everything
+        run: ZIP=$(find . -maxdepth 1 -iname '*.zip' | head -n 1) && unzip -q "$ZIP" -d src && cd src/* && npm install && npm run build && ([ -d "android" ] || npx cap add android) && npx cap sync android && cd android && chmod +x gradlew && ./gradlew assembleDebug
+      - name: Save APK
+        run: mkdir -p out && cp src/*/android/app/build/outputs/apk/debug/app-debug.apk out/app-debug.apk
       - uses: actions/upload-artifact@v4
         with:
           name: Hudalchiig-Ol-APK
